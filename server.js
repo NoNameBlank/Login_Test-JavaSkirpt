@@ -18,7 +18,9 @@ const session = require('express-session')
 const initializePassport = require('./passport-config')
 initializePassport(
     passport, 
-    email => users.find(user => user.email === email)
+    email => users.find(user => user.email === email),
+    id => users.find(user => user.id === id)
+
 )
 
 //Dem Server sagen, wir benutzen ejs
@@ -39,7 +41,7 @@ app.use(passport.session())
 
 
 app.get('/', (req, res)=> {
-    res.render('index.ejs', { name : 'Philipp'})
+    res.render('index.ejs', { name : req.user.name})
 })
 
 //Login
@@ -48,7 +50,7 @@ app.get('/login', (req, res)=>{
 })
 
 app.post('/login', passport.authenticate('local', {
-    successRedirect: '/',
+    successRedirect: '/dashboard',
     failureRedirect: '/login',
     failureFlash: true
 }))
@@ -79,7 +81,7 @@ console.log(users)
 
 //Dashbord
 app.get('/dashboard', (req, res)=>{
-    res.render('dashboard.ejs')
+    res.render('dashboard.ejs', { name : req.user.name })
 })
 
 app.listen(3000)
