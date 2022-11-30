@@ -13,6 +13,7 @@ const bcrypt = require('bcrypt')
 const passport = require('passport')
 const flash = require('express-flash')
 const session = require('express-session')
+const mehtodOverride = require('method-override')
 
 
 const initializePassport = require('./passport-config')
@@ -36,31 +37,32 @@ app.use(session({
 
 app.use(passport.initialize())
 app.use(passport.session())
+app.use(mehtodOverride('_methode'))
 
 
 
 
-app.get('/', (req, res)=> {
-    res.render('index.ejs', { name : req.user.name})
+app.get('/',  checkAuthenticated, (req, res)=> {
+    res.render('index.ejs')
 })
 
 //Login
-app.get('/login', (req, res)=>{
+app.get('/login',checkNotAuthenticated, (req, res)=>{
         res.render('login.ejs')
 })
 
-app.post('/login', passport.authenticate('local', {
+app.post('/login',checkNotAuthenticated, passport.authenticate('local', {
     successRedirect: '/dashboard',
     failureRedirect: '/login',
     failureFlash: true
 }))
 
 //Register
-app.get('/register', (req, res)=>{
+app.get('/register',checkNotAuthenticated, (req, res)=>{
     res.render('register.ejs')
 })
 
-app.post('/register', async (req, res)=>{
+app.post('/register',checkNotAuthenticated, async (req, res)=>{
 try {
     const hashedPassword = await bcrypt.hash(req.body.password, 10) //10 ist ein guter Wert dauert nicht zu lange und trozdem sicher 
     users.push({
@@ -80,8 +82,32 @@ console.log(users)
 })
 
 //Dashbord
-app.get('/dashboard', (req, res)=>{
+app.get('/dashboard', checkAuthenticated, (req, res)=>{
     res.render('dashboard.ejs', { name : req.user.name })
 })
+
+
+
+app.delete('/logout', (req, res) => {
+    req.logOut()
+    res.redirect('/login')
+})
+
+
+//Funktion schaut ob User ist berichtigt wenn ja darf er die Seite sehen wenn nein wird er automatisch auf die Login Seite gebracht
+function checkAuthenticated(req, res, next) {
+    if (req.isAuthenticated()){
+        return next()
+    }
+    res.redirect('/login')
+}
+
+//Funktion wenn der User eingeloggt ist soll er z.B. nicht mehr auf die Login seite kommen
+function checkNotAuthenticated(req, res, next) {
+    if (req.isAuthenticated()){
+       return res.redirect('/dashboard')
+    }
+    next()
+}
 
 app.listen(3000)
