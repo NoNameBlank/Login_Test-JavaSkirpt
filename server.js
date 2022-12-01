@@ -13,7 +13,8 @@ const bcrypt = require('bcrypt')
 const passport = require('passport')
 const flash = require('express-flash')
 const session = require('express-session')
-const mehtodOverride = require('method-override')
+const methodOverride = require('method-override')
+
 
 
 const initializePassport = require('./passport-config')
@@ -37,7 +38,7 @@ app.use(session({
 
 app.use(passport.initialize())
 app.use(passport.session())
-app.use(mehtodOverride('_methode'))
+app.use(methodOverride('_method'))
 
 
 
@@ -86,11 +87,14 @@ app.get('/dashboard', checkAuthenticated, (req, res)=>{
     res.render('dashboard.ejs', { name : req.user.name })
 })
 
-
-
+//Logout
 app.delete('/logout', (req, res) => {
-    req.logOut()
+    req.logOut(function(err) {
+        if (err) { 
+          return next(err); 
+          }
     res.redirect('/login')
+  })
 })
 
 
